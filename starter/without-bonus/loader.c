@@ -15,7 +15,7 @@ void loader_cleanup() {
  * Load and run the ELF executable file
  */
 void load_and_run_elf(char** exe) {
-  fd = open(argv[1], O_RDONLY);
+  fd = open(exe[1], O_RDONLY);
   // 1. Load entire binary content into the memory from the ELF file.
   // 2. Iterate through the PHDR table and find the section of PT_LOAD 
   //    type that contains the address of the entrypoint method in fib.c
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
   }
   // 1. carry out necessary checks on the input ELF file
   // 2. passing it to the loader for carrying out the loading/execution
-  load_and_run_elf(argv[1]);
+  load_and_run_elf(argv);
   // 3. invoke the cleanup routine inside the loader  
   loader_cleanup();
   return 0;

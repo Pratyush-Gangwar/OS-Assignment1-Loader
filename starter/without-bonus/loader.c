@@ -2,13 +2,22 @@
 
 Elf32_Ehdr *ehdr;
 Elf32_Phdr *phdr;
+char* virtual_mem;
 int fd;
 
 /*
  * release memory and other cleanups
  */
 void loader_cleanup() {
-  
+  // close the file
+  close(fd);
+
+  // free mmap'd memory
+  munmap(virtual_mem, phdr->p_memsz);
+
+  // free the malloc'ed memory
+  free(ehdr);
+  free(phdr);
 }
 
 /*
@@ -38,7 +47,7 @@ void load_and_run_elf(char** exe) {
   //    and then copy the segment content
 
   // mmap returns void* but pointer arithmetic gives error with void*
-  char* virtual_mem = mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
+  virtual_mem = mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
 
   lseek(fd, phdr->p_offset, SEEK_SET);
   read(fd, virtual_mem, phdr->p_filesz );
@@ -70,11 +79,12 @@ int main(int argc, char** argv)
     exit(1);
   }
   // 1. carry out necessary checks on the input ELF file
-  
+
   // 2. passing it to the loader for carrying out the loading/execution
   load_and_run_elf(argv);
 
   // 3. invoke the cleanup routine inside the loader  
   loader_cleanup();
+
   return 0;
 }

@@ -16,13 +16,13 @@ void loader_cleanup() {
  */
 void load_and_run_elf(char** exe) {
   fd = open(exe[1], O_RDONLY);
+
   // 1. Load entire binary content into the memory from the ELF file.
   ehdr = malloc( sizeof(Elf32_Ehdr) );
   read(fd, ehdr, sizeof(Elf32_Ehdr));
 
   // 2. Iterate through the PHDR table and find the section of PT_LOAD 
   //    type that contains the address of the entrypoint method in fib.c
- 
   lseek(fd, ehdr->e_phoff, SEEK_SET);
 
   for(int i = 0; i < ehdr->e_phnum; i++) {
@@ -32,10 +32,23 @@ void load_and_run_elf(char** exe) {
     if (phdr->p_type == PT_LOAD && phdr->p_vaddr <= ehdr->e_entry && ehdr->e_entry < phdr->p_vaddr + phdr->p_memsz) {
       break;
     } 
-  }
+  } 
 
   // 3. Allocate memory of the size "p_memsz" using mmap function 
   //    and then copy the segment content
+  void* virtual_mem = mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
+  
+  lseek(fd, phdr->p_offset);
+  read(fd, virtual_mem, phdr->p_filesz );
+
+  // Remaining bytes must be set to 0
+  if (phdr->p_memsz > phdr->p_filesz) {
+    char* memset_addr = (char*) virtual_mem + phdr->p_filesz; // pointer arithmetic gives error with void*
+    int numClearBytes = phdr->p_memsz - phdr->p_filesz;
+
+    memset(memset_addr, 0, numClearBytes);
+  }
+
   // 4. Navigate to the entrypoint address into the segment loaded in the memory in above step
   // 5. Typecast the address to that of function pointer matching "_start" method in fib.c.
   // 6. Call the "_start" method and print the value returned from the "_start"

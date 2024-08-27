@@ -24,23 +24,49 @@ void loader_cleanup() {
 /*
  * Load and run the ELF executable file
  */
-void load_and_run_elf(char** exe) {
+
+void load_and_validate(char** exe) {
+  // Open file
   fd = open(exe[1], O_RDONLY);
   if (fd == 1) {
-    printf("Error while opening file.");
+    printf("Error while opening file\n");
     exit(1);
   }
 
+  // Load first 5 bytes - 4 of which are ELF 'magic' and 1 of which is ELFCLASS
+  unsigned char e_ident[5];
+  read(fd, e_ident, 5);
+  
+  if ( !(e_ident[0] == 0x7f && e_ident[1] == 'E' && e_ident[2] == 'L' && e_ident[3] == 'F') ) {
+    printf("Not an ELF file\n");
+    exit(1);
+  }
+
+  if ( !(e_ident[4] == 1) ) {
+    printf("Not 32-bit ELF fle\n");
+    exit(1);
+  }
+
+  // Seek back to the start of the file so that ELF header can be properly loaded in load_and_run_elf()
+  ret = lseek(fd, 0, SEEK_SET);
+  if (ret == -1) {
+    printf("Error while seeking to start\n");
+    exit(1);
+  }
+}
+
+void load_and_run_elf(char** exe) {
+  
   // 1. Load entire binary content into the memory from the ELF file.
   ehdr = malloc( sizeof(Elf32_Ehdr) );
   if (ehdr == NULL) { 
-    printf("Error while malloc'ing Ehdr");
+    printf("Error while malloc'ing Ehdr\n");
     exit(1);
   }
 
   ret = read(fd, ehdr, sizeof(Elf32_Ehdr));
   if (ret == -1) {
-    printf("Error while reading Ehdr");
+    printf("Error while reading Ehdr\n");
     exit(1);
   }
 
@@ -48,7 +74,7 @@ void load_and_run_elf(char** exe) {
   //    type that contains the address of the entrypoint method in fib.c
   ret = lseek(fd, ehdr->e_phoff, SEEK_SET);
   if (ret == (off_t) - 1) {
-    printf("Error while seeking to program header table.");
+    printf("Error while seeking to program header table\n");
     exit(1);
   }
 
@@ -57,13 +83,13 @@ void load_and_run_elf(char** exe) {
   for(int i = 0; i < ehdr->e_phnum; i++) {
     phdr = malloc( sizeof(Elf32_Phdr) );
     if (phdr == NULL) { 
-      printf("Error while malloc'ing Phdr at index %d", i);
+      printf("Error while malloc'ing Phdr at index %d\n", i);
       exit(1);
     }
 
     ret = read(fd, phdr, sizeof(Elf32_Phdr));
     if (ret == -1) {
-      printf("Error while reading Ehdr at index %d", i);
+      printf("Error while reading Ehdr at index %d\n", i);
       exit(1);
     }
     
@@ -74,7 +100,7 @@ void load_and_run_elf(char** exe) {
   } 
 
   if (!entry_found) {
-    printf("Entry point doesn't exist.");
+    printf("Entry point doesn't exist\n");
     exit(1);
   }
 
@@ -84,19 +110,19 @@ void load_and_run_elf(char** exe) {
   // mmap returns void* but pointer arithmetic gives error with void*
   virtual_mem = mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
   if (virtual_mem == MAP_FAILED) {
-    printf("Failed to allocate virtual memory");
+    printf("Failed to allocate virtual memory\n");
     exit(1);
   }
 
   ret = lseek(fd, phdr->p_offset, SEEK_SET);
   if (ret == -1) {
-    printf("Error while seeking to the executable segment");
+    printf("Error while seeking to the executable segment\n");
     exit(1);
   }
 
   ret = read(fd, virtual_mem, phdr->p_filesz );
   if (ret == -1) {
-    printf("Error while writing bytes from file to virtual memory");
+    printf("Error while writing bytes from file to virtual memory\n");
     exit(1);
   }
 
@@ -127,6 +153,7 @@ int main(int argc, char** argv)
     exit(1);
   }
   // 1. carry out necessary checks on the input ELF file
+  load_and_validate(argv);
 
   // 2. passing it to the loader for carrying out the loading/execution
   load_and_run_elf(argv);

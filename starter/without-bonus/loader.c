@@ -36,20 +36,25 @@ void load_and_run_elf(char** exe) {
 
   // 3. Allocate memory of the size "p_memsz" using mmap function 
   //    and then copy the segment content
-  void* virtual_mem = mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
-  
-  lseek(fd, phdr->p_offset);
+
+  // mmap returns void* but pointer arithmetic gives error with void*
+  char* virtual_mem = mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
+
+  lseek(fd, phdr->p_offset, SEEK_SET);
   read(fd, virtual_mem, phdr->p_filesz );
 
   // Remaining bytes must be set to 0
   if (phdr->p_memsz > phdr->p_filesz) {
-    char* memset_addr = (char*) virtual_mem + phdr->p_filesz; // pointer arithmetic gives error with void*
+    char* memset_addr = virtual_mem + phdr->p_filesz; 
     int numClearBytes = phdr->p_memsz - phdr->p_filesz;
 
     memset(memset_addr, 0, numClearBytes);
   }
 
   // 4. Navigate to the entrypoint address into the segment loaded in the memory in above step
+  int offset = ehdr->e_entry - phdr->p_vaddr;
+  char* actual_entry = virtual_mem + offset;
+
   // 5. Typecast the address to that of function pointer matching "_start" method in fib.c.
   // 6. Call the "_start" method and print the value returned from the "_start"
   // int result = _start();

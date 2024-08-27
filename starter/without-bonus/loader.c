@@ -56,9 +56,11 @@ void load_and_run_elf(char** exe) {
   char* actual_entry = virtual_mem + offset;
 
   // 5. Typecast the address to that of function pointer matching "_start" method in fib.c.
+  int (*_start)() = ( int(*)() ) actual_entry;
+
   // 6. Call the "_start" method and print the value returned from the "_start"
-  // int result = _start();
-  // printf("User _start return value = %d\n",result);
+  int result = _start();
+  printf("User _start return value = %d\n",result);
 }
 
 int main(int argc, char** argv) 
@@ -68,8 +70,10 @@ int main(int argc, char** argv)
     exit(1);
   }
   // 1. carry out necessary checks on the input ELF file
+  
   // 2. passing it to the loader for carrying out the loading/execution
   load_and_run_elf(argv);
+
   // 3. invoke the cleanup routine inside the loader  
   loader_cleanup();
   return 0;

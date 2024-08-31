@@ -2,10 +2,13 @@
 #move the lib_simpleloader.so and launch binaries inside bin directory
 #Provide the command for cleanup
 
-../loader/loader.out:
-	cd ./loader && make && mv lib_simpleloader.so ../bin
-	cd ./launcher && make && mv launch.out ../bin
-	cd ./test && make && mv fib ../bin
+all:
+	cd ./loader && make && cp lib_simpleloader.so ../bin
+	cd ./launcher && make && cp launch.out ../bin
+	cd ./test && make && cp fib ../bin
 
 clean:
-	rm ./loader/loader.o && cd ./bin && rm * 
+	rm ./bin/*
+	cd ./loader && make clean
+	cd ./launcher && make clean
+	cd ./test && make clean

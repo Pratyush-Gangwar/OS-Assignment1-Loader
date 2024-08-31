@@ -83,13 +83,13 @@ void load_and_run_elf(char** exe) {
 
   int entry_found = 0;
 
-  for(int i = 0; i < ehdr->e_phnum; i++) {
-    phdr = malloc( sizeof(Elf32_Phdr) );
-    if (phdr == NULL) { 
-      printf("Error while malloc'ing Phdr at index %d\n", i);
-      exit(1);
-    }
+  phdr = malloc( sizeof(Elf32_Phdr) );
+  if (phdr == NULL) { 
+    printf("Error while malloc'ing Phdr");
+    exit(1);
+  }
 
+  for(int i = 0; i < ehdr->e_phnum; i++) {
     ret = read(fd, phdr, sizeof(Elf32_Phdr));
     if (ret == -1) {
       printf("Error while reading Ehdr at index %d\n", i);

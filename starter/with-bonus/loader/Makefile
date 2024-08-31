@@ -1,5 +1,5 @@
 #Create lib_simpleloader.so from loader.c
-../bin/lib_simpleloader.so: loader.o
+lib_simpleloader.so: loader.o
 	gcc loader.o -m32 -shared -o lib_simpleloader.so
 
 loader.o: loader.c loader.h

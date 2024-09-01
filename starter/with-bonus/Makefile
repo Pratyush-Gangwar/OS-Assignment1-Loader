@@ -5,7 +5,7 @@
 all:
 	cd ./loader && make && cp lib_simpleloader.so ../bin
 	cd ./launcher && make && cp launch.out ../bin
-	cd ./test && make && cp fib ../bin
+	cd ./test && make
 
 clean:
 	rm ./bin/*
